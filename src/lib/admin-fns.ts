@@ -83,18 +83,36 @@ export const deleteRecruiterFn = createServerFn(
   async (data: DeleteRecruiterInput) => {
     const admin = getAdminClient();
 
-    // Delete auth user first — cascades to profiles via FK
-    const { error: authErr } = await admin.auth.admin.deleteUser(data.user_id);
-    if (authErr) {
-      // If auth delete fails, try removing profile only
-      const { error: profileErr } = await admin
+    try {
+      // 1. Limpa recruiter_id em profiles que referenciam este usuário
+      //    (FK sem ON DELETE CASCADE — causa violação se não limpar antes)
+      await admin
+        .from("profiles")
+        .update({ recruiter_id: null })
+        .eq("recruiter_id", data.user_id);
+
+      // 2. Remove o perfil do próprio usuário
+      await admin
         .from("profiles")
         .delete()
         .eq("id", data.user_id);
-      if (profileErr) return { success: false as const, error: authErr.message };
-      return { success: true as const };
-    }
 
-    return { success: true as const };
+      // 3. Remove o usuário do auth (tokens cascade automaticamente)
+      const { error: authErr } = await admin.auth.admin.deleteUser(data.user_id);
+      if (authErr) {
+        // Usuário auth pode já não existir se foi criado via SQL direto
+        // A profile já foi removida — considera sucesso
+        const notFound =
+          authErr.message.toLowerCase().includes("not found") ||
+          authErr.message.toLowerCase().includes("user not found");
+        if (!notFound) {
+          return { success: false as const, error: authErr.message };
+        }
+      }
+
+      return { success: true as const };
+    } catch (err: any) {
+      return { success: false as const, error: err?.message ?? "Erro ao excluir usuário" };
+    }
   }
 );
