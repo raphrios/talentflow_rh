@@ -1,0 +1,14 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "talentflowrh",
+  "compatibility_date": "2025-09-24",
+  "compatibility_flags": ["nodejs_compat"],
+  "main": "src/server.ts",
+  "vars": {
+    "SUPABASE_URL": "https://cuiucnpcqahyvdkwrmgp.supabase.co",
+    "SUPABASE_PUBLISHABLE_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN1aXVjbnBjcWFoeXZka3dybWdwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkyMjg2NDQsImV4cCI6MjA5NDgwNDY0NH0.NytcbSBjYKhzcKn2GlGwRkwSWG0uzhf0SC2CXgRtb1E",
+    "VITE_SUPABASE_URL": "https://cuiucnpcqahyvdkwrmgp.supabase.co",
+    "VITE_SUPABASE_PUBLISHABLE_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN1aXVjbnBjcWFoeXZka3dybWdwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkyMjg2NDQsImV4cCI6MjA5NDgwNDY0NH0.NytcbSBjYKhzcKn2GlGwRkwSWG0uzhf0SC2CXgRtb1E",
+    "VITE_SUPABASE_PROJECT_ID": "cuiucnpcqahyvdkwrmgp"
+  }
+}

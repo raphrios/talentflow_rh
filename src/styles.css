@@ -1,0 +1,342 @@
+@import "tailwindcss";
+@variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --color-background: #06080f;
+  --color-surface: #0a0c14;
+  --color-card: #0d101a;
+  --color-card-elevated: #121624;
+  --color-border: rgba(255, 255, 255, 0.08);
+  --color-foreground: #ffffff;
+  --color-muted: #8e96aa;
+  --color-muted-foreground: #6c7284;
+  --color-primary: #00d4aa;
+  --color-primary-glow: rgba(0, 212, 170, 0.25);
+  --color-primary-foreground: #000000;
+  --color-accent: #00d4aa;
+  --color-success: #00d4aa;
+  --color-warning: #f1c40f;
+  --color-danger: #ff4b4b;
+  --color-info: #3498db;
+  --font-display: "Plus Jakarta Sans", system-ui, sans-serif;
+  --font-sans: "DM Sans", system-ui, sans-serif;
+}
+
+/* ── Light mode overrides ─────────────────────────────────── */
+html.light {
+  --color-background: #f0f4fb;
+  --color-surface: #ffffff;
+  --color-card: #ffffff;
+  --color-card-elevated: #f8faff;
+  --color-border: rgba(0, 0, 0, 0.08);
+  --color-foreground: #0d1117;
+  --color-muted: #4a5568;
+  --color-muted-foreground: #6b7280;
+  --color-primary: #009e80;
+  --color-primary-glow: rgba(0, 158, 128, 0.2);
+  --color-primary-foreground: #ffffff;
+  --color-accent: #009e80;
+  --color-success: #009e80;
+  --color-danger: #dc2626;
+}
+
+html, body {
+  background: var(--color-background);
+  color: var(--color-foreground);
+  font-family: var(--font-sans);
+  min-height: 100vh;
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  transition: background 0.3s ease, color 0.2s ease;
+}
+
+body {
+  background:
+    radial-gradient(circle at 50% -20%, rgba(0, 212, 170, 0.05), transparent 70%),
+    radial-gradient(circle at 0% 100%, rgba(59, 130, 246, 0.03), transparent 50%),
+    var(--color-background);
+}
+
+html.light body {
+  background:
+    radial-gradient(circle at 50% -20%, rgba(0, 158, 128, 0.06), transparent 70%),
+    radial-gradient(circle at 100% 100%, rgba(59, 130, 246, 0.04), transparent 50%),
+    var(--color-background);
+}
+
+h1, h2, h3, h4, h5, h6 { 
+  font-family: var(--font-display); 
+  letter-spacing: -0.02em; 
+  font-weight: 700;
+}
+
+.glass {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--color-border);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+html.light .glass {
+  background: rgba(255, 255, 255, 0.7);
+}
+
+.glass-strong {
+  background: rgba(6, 8, 15, 0.8);
+  border-bottom: 1px solid var(--color-border);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transition: background 0.3s ease;
+}
+
+html.light .glass-strong {
+  background: rgba(255, 255, 255, 0.92);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.gradient-text {
+  background: linear-gradient(to right, #ffffff, #8e96aa);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+html.light .gradient-text {
+  background: linear-gradient(to right, #0d1117, #4a5568);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.accent-text {
+  background: linear-gradient(135deg, #00d4aa 0%, #2dffce 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.btn-primary {
+  background: var(--color-primary);
+  color: var(--color-primary-foreground);
+  font-weight: 700;
+  border-radius: 9999px;
+  padding: 0.75rem 1.5rem;
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  border: none;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-primary:hover { 
+  transform: translateY(-2px);
+  background: #2dffce;
+  box-shadow: 0 10px 20px rgba(0, 212, 170, 0.2);
+}
+
+.btn-primary:active {
+  transform: translateY(0) scale(0.98);
+}
+
+.btn-ghost {
+  border: 1px solid var(--color-border);
+  color: var(--color-foreground);
+  padding: 0.75rem 1.5rem;
+  border-radius: 9999px;
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  background: transparent;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.btn-ghost:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px);
+}
+
+html.light .btn-ghost:hover {
+  background: rgba(0, 0, 0, 0.05);
+  border-color: rgba(0, 0, 0, 0.15);
+}
+
+.btn-ghost:active {
+  transform: translateY(0) scale(0.98);
+}
+
+.input {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--color-border);
+  color: var(--color-foreground);
+  border-radius: 12px;
+  padding: 0.8rem 1rem;
+  transition: all 0.2s ease;
+}
+.input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  background: rgba(255, 255, 255, 0.05);
+  box-shadow: 0 0 0 4px var(--color-primary-glow);
+}
+
+html.light .input {
+  background: rgba(0, 0, 0, 0.03);
+}
+html.light .input:focus {
+  background: rgba(0, 158, 128, 0.03);
+}
+
+/* Base card — used for modals and panels */
+.card {
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: 20px;
+  transition: all 0.3s ease;
+}
+
+.card-revolut {
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: 24px;
+  padding: 24px;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.card-revolut:hover {
+  border-color: rgba(255, 255, 255, 0.15);
+  transform: translateY(-4px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+}
+
+html.light .card-revolut:hover {
+  border-color: rgba(0, 0, 0, 0.12);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+}
+
+.badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 4px 12px; border-radius: 999px; font-size: 11px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.05em;
+}
+
+.bento-grid {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 20px;
+}
+
+::selection { background: #00d4aa; color: #000; }
+
+@keyframes reveal {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes shimmer {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(100%); }
+}
+
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse-glow {
+  0% { box-shadow: 0 0 0 0 rgba(0, 212, 170, 0.4); }
+  70% { box-shadow: 0 0 0 10px rgba(0, 212, 170, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(0, 212, 170, 0); }
+}
+
+.reveal { animation: reveal 0.8s cubic-bezier(0.16, 1, 0.3, 1) both; }
+.animate-shimmer { animation: shimmer 2s infinite; }
+.animate-fade-up { animation: fade-up 0.4s ease-out both; }
+.pulse-ring { animation: pulse-glow 2s infinite; }
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+html.light ::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.15);
+}
+html.light ::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.25);
+}
+
+/* Glass Morphism */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+html.light .glass-panel {
+  background: rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+/* ── Light mode: fix hardcoded white-opacity classes ──────── */
+/* These classes are designed for dark backgrounds.            */
+/* In light mode we invert them to use dark-opacity.          */
+html.light [class*="border-white\/"] {
+  --tw-border-opacity: 1;
+  border-color: rgba(0, 0, 0, 0.08) !important;
+}
+html.light [class*="divide-white\/"] > * + * {
+  border-color: rgba(0, 0, 0, 0.08) !important;
+}
+html.light .bg-surface\/40,
+html.light .bg-surface\/50,
+html.light .bg-surface\/60 {
+  background-color: rgba(248, 250, 255, 0.8) !important;
+}
+html.light [class*="hover\:bg-white\/"]:hover {
+  background-color: rgba(0, 0, 0, 0.04) !important;
+}
+html.light [class*="bg-white\/"][class*="bg-white\/2"],
+html.light [class*="bg-white\/"][class*="bg-white\/5"] {
+  background-color: rgba(0, 0, 0, 0.03) !important;
+}
+
+/* ── Theme toggle button ──────────────────────────────────── */
+.theme-toggle {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--color-foreground);
+}
+.theme-toggle:hover {
+  background: rgba(255, 255, 255, 0.08);
+  transform: rotate(12deg) scale(1.1);
+}
+html.light .theme-toggle:hover {
+  background: rgba(0, 0, 0, 0.06);
+}
+
