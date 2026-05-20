@@ -159,7 +159,6 @@ function TestCard({ title, description, icon, status, testType, userId }: any) {
       
       setSaving(false);
       setActive(false);
-      window.location.reload();
     }
   };
 

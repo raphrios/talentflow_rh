@@ -136,8 +136,8 @@ export function useMeetings() {
       return data.map((m: any) => ({
         id: m.id,
         candidateId: m.candidate_id,
-        candidate: m.candidates.name,
-        position: m.candidates.position,
+        candidate: m.candidates?.name ?? "—",
+        position: m.candidates?.position ?? "—",
         date: m.date,
         time: m.time,
         type: m.type,

@@ -1,11 +1,11 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { DashboardShell } from "@/components/DashboardShell";
 import { toast } from "sonner";
 import { useProfile } from "@/hooks/use-talent-flow";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Plus, UserPlus, Shield, Loader2, Trash2, Key, RefreshCw, Copy, Check } from "lucide-react";
-import { useState, useEffect } from "react";
+import { UserPlus, Shield, Loader2, Key, RefreshCw, Copy, Check } from "lucide-react";
+import { useState } from "react";
 
 export const Route = createFileRoute("/dashboard/settings")({
   component: SettingsPage,
@@ -13,11 +13,7 @@ export const Route = createFileRoute("/dashboard/settings")({
 
 function SettingsPage() {
   const { data: profile, isLoading } = useProfile();
-  const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [newEmail, setNewEmail] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [isCreating, setIsCreating] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [copied, setCopied] = useState(false);
 
@@ -38,17 +34,19 @@ function SettingsPage() {
     setIsGenerating(true);
     try {
       if (!profile?.id) throw new Error("Usuário não identificado");
-      // Usar a função RPC do banco que criamos
-      const { data: token, error: genError } = await supabase.rpc('generate_token', { length: 6 });
-      if (genError) throw genError;
+
+      // Gera token de 6 dígitos no cliente como fallback seguro
+      let token: string;
+      try {
+        const { data, error: rpcErr } = await supabase.rpc('generate_token', { length: 6 });
+        token = !rpcErr && data ? String(data) : String(Math.floor(100000 + Math.random() * 900000));
+      } catch {
+        token = String(Math.floor(100000 + Math.random() * 900000));
+      }
 
       const { error } = await supabase
         .from("recruitment_tokens")
-        .insert({
-          recruiter_id: profile?.id,
-          token: token,
-          is_active: true
-        });
+        .insert({ recruiter_id: profile.id, token, is_active: true });
 
       if (error) throw error;
       toast.success("Novo token gerado!");
@@ -82,75 +80,6 @@ function SettingsPage() {
     }
   };
 
-  // Listar todos os recrutadores (somente admin vê todos)
-  const { data: recruiters, isLoading: loadingRecruiters } = useQuery({
-    queryKey: ["recruiters"],
-    queryFn: async () => {
-      // Como a tabela profiles não tem email, vamos assumir que apenas admins 
-      // podem listar outros perfis e que o sistema vai lidar com a exibição
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("*")
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      return data;
-    },
-    enabled: profile?.role === "admin",
-  });
-
-  const createRecruiter = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newEmail || !newPassword) {
-      toast.error("Preencha todos os campos");
-      return;
-    }
-
-    setIsCreating(true);
-    try {
-      // Nota: Em um ambiente real, você usaria uma Edge Function ou Admin Auth API
-      // Aqui vamos simular o convite ou criação
-      const { data, error } = await supabase.auth.signUp({
-        email: newEmail,
-        password: newPassword,
-        options: {
-          data: {
-            role: "recruiter",
-          }
-        }
-      });
-
-      if (error) throw error;
-      
-      toast.success("Recrutador criado com sucesso!");
-      setNewEmail("");
-      setNewPassword("");
-      queryClient.invalidateQueries({ queryKey: ["recruiters"] });
-    } catch (error: any) {
-      toast.error(error.message || "Erro ao criar recrutador");
-    } finally {
-      setIsCreating(false);
-    }
-  };
-
-  const deleteRecruiter = async (id: string) => {
-    if (id === profile?.id) {
-      toast.error("Você não pode excluir seu próprio perfil");
-      return;
-    }
-
-    try {
-      const { error } = await supabase
-        .from("profiles")
-        .delete()
-        .eq("id", id);
-      
-      if (error) throw error;
-      toast.success("Perfil removido");
-      queryClient.invalidateQueries({ queryKey: ["recruiters"] });
-    } catch (error: any) {
-      toast.error("Erro ao remover: " + error.message);
-    }
-  };
 
   if (isLoading) {
     return (
@@ -258,77 +187,17 @@ function SettingsPage() {
             <div className="card p-6 border-primary/20 bg-primary/[0.02]">
               <h2 className="text-lg font-semibold mb-1 flex items-center gap-2">
                 <UserPlus className="w-5 h-5 text-primary" />
-                Adicionar Recrutador
+                Gerenciar Equipe
               </h2>
-              <p className="text-sm text-muted mb-5">Crie novos acessos para sua equipe.</p>
-              
-              <form onSubmit={createRecruiter} className="space-y-4">
-                <div className="space-y-3">
-                  <input 
-                    type="email" 
-                    placeholder="E-mail do recrutador" 
-                    className="input w-full"
-                    value={newEmail}
-                    onChange={(e) => setNewEmail(e.target.value)}
-                    required
-                  />
-                  <input 
-                    type="password" 
-                    placeholder="Senha temporária" 
-                    className="input w-full"
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                    required
-                  />
-                </div>
-                <button 
-                  type="submit" 
-                  className="btn-primary w-full flex items-center justify-center gap-2"
-                  disabled={isCreating}
-                >
-                  {isCreating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
-                  Criar Conta de Recrutador
-                </button>
-              </form>
-            </div>
-
-            <div className="card overflow-hidden">
-              <div className="p-6 border-b border-border/50">
-                <h2 className="text-lg font-semibold mb-1">Equipe de Recrutadores</h2>
-                <p className="text-sm text-muted">Gerencie quem tem acesso ao sistema.</p>
-              </div>
-              <div className="divide-y divide-border/50 max-h-[400px] overflow-y-auto">
-                {loadingRecruiters ? (
-                  <div className="p-8 text-center"><Loader2 className="w-6 h-6 animate-spin mx-auto text-muted" /></div>
-                ) : recruiters?.length === 0 ? (
-                  <div className="p-8 text-center text-sm text-muted">Nenhum outro recrutador cadastrado.</div>
-                ) : (
-                  recruiters?.map((r: any) => (
-                    <div key={r.id} className="p-4 flex items-center justify-between hover:bg-secondary/20 transition-colors">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary">
-                          {(r.email || "R").charAt(0).toUpperCase()}
-                        </div>
-                        <div>
-                          <div className="text-sm font-medium flex items-center gap-2">
-                          {r.full_name || "Recrutador"}
-                          {r.role === "admin" && <Shield className="w-3 h-3 text-primary" />}
-                          </div>
-                          <div className="text-[10px] text-muted capitalize">{r.role}</div>
-                        </div>
-                      </div>
-                      {r.id !== profile?.id && (
-                        <button 
-                          onClick={() => deleteRecruiter(r.id)}
-                          className="p-2 text-muted hover:text-destructive transition-colors"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      )}
-                    </div>
-                  ))
-                )}
-              </div>
+              <p className="text-sm text-muted mb-5">
+                Crie, edite e gerencie os acessos dos recrutadores da sua equipe.
+              </p>
+              <Link
+                to="/dashboard/recruiters"
+                className="btn-primary w-full flex items-center justify-center gap-2"
+              >
+                <Shield className="w-4 h-4" /> Ir para Gestão de Recrutadores
+              </Link>
             </div>
           </div>
         )}

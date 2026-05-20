@@ -170,6 +170,29 @@ html.light .btn-ghost:hover {
   transform: translateY(0) scale(0.98);
 }
 
+.btn-secondary {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--color-foreground);
+  font-weight: 700;
+  border-radius: 9999px;
+  padding: 0.75rem 1.5rem;
+  border: 1px solid var(--color-border);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+}
+.btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.15);
+  transform: translateY(-2px);
+}
+.btn-secondary:active { transform: translateY(0) scale(0.98); }
+html.light .btn-secondary { background: rgba(0,0,0,0.05); border-color: rgba(0,0,0,0.10); }
+html.light .btn-secondary:hover { background: rgba(0,0,0,0.09); border-color: rgba(0,0,0,0.18); }
+
 .input {
   width: 100%;
   background: rgba(255, 255, 255, 0.03);

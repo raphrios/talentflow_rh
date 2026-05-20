@@ -139,9 +139,10 @@ export function DashboardShell({ children, title }: { children: React.ReactNode;
           <div className="flex items-center gap-4 lg:gap-6">
             <div className="relative hidden md:block">
               <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
-              <input 
-                className="input pl-12 w-80 !bg-surface !border-white/5" 
-                placeholder="Pesquisar em todo o TalentFlow..." 
+              <input
+                className="input w-80 !bg-surface !border-white/5"
+                style={{ paddingLeft: "3rem" }}
+                placeholder="Pesquisar em todo o TalentFlow..."
               />
             </div>
             

@@ -226,26 +226,10 @@ function TokenPage() {
                   </motion.button>
                 </form>
 
-                <div className="mt-12 pt-8 border-t border-white/5 flex flex-col items-center gap-4">
-                  <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground/60">Candidato Teste (Demo)</p>
-                  <div className="flex flex-wrap justify-center gap-2">
-                    {["482910", "551239", "664428"].map((t, idx) => (
-                      <motion.button 
-                        key={t}
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ delay: 0.5 + idx * 0.1 }}
-                        whileHover={{ scale: 1.1, backgroundColor: "rgba(255,255,255,0.1)" }}
-                        onClick={() => {
-                          setDigits(t.split(""));
-                          setTimeout(() => submit(undefined, t), 100);
-                        }}
-                        className="px-3 py-1.5 rounded-lg bg-white/5 text-xs font-mono text-muted hover:text-foreground transition-all"
-                      >
-                        {t}
-                      </motion.button>
-                    ))}
-                  </div>
+                <div className="mt-12 pt-8 border-t border-white/5 text-center">
+                  <p className="text-xs text-muted-foreground/50">
+                    O token foi enviado via WhatsApp ou e-mail pela empresa.
+                  </p>
                 </div>
               </div>
             </motion.div>
