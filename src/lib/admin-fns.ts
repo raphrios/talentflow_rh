@@ -85,34 +85,33 @@ export const deleteRecruiterFn = createServerFn(
 
     try {
       // 1. Limpa recruiter_id em profiles que referenciam este usuário
-      //    (FK sem ON DELETE CASCADE — causa violação se não limpar antes)
-      await admin
+      const { error: e1 } = await admin
         .from("profiles")
         .update({ recruiter_id: null })
         .eq("recruiter_id", data.user_id);
+      if (e1) return { success: false as const, error: `[step1-clear-recruiter_id] ${e1.message}` };
 
       // 2. Remove o perfil do próprio usuário
-      await admin
+      const { error: e2 } = await admin
         .from("profiles")
         .delete()
         .eq("id", data.user_id);
+      if (e2) return { success: false as const, error: `[step2-delete-profile] ${e2.message}` };
 
       // 3. Remove o usuário do auth (tokens cascade automaticamente)
-      const { error: authErr } = await admin.auth.admin.deleteUser(data.user_id);
-      if (authErr) {
-        // Usuário auth pode já não existir se foi criado via SQL direto
-        // A profile já foi removida — considera sucesso
+      const { error: e3 } = await admin.auth.admin.deleteUser(data.user_id);
+      if (e3) {
         const notFound =
-          authErr.message.toLowerCase().includes("not found") ||
-          authErr.message.toLowerCase().includes("user not found");
+          e3.message.toLowerCase().includes("not found") ||
+          e3.message.toLowerCase().includes("user not found");
         if (!notFound) {
-          return { success: false as const, error: authErr.message };
+          return { success: false as const, error: `[step3-delete-auth] ${e3.message}` };
         }
       }
 
       return { success: true as const };
     } catch (err: any) {
-      return { success: false as const, error: err?.message ?? "Erro ao excluir usuário" };
+      return { success: false as const, error: `[exception] ${err?.message ?? "unknown"}` };
     }
   }
 );

@@ -6,7 +6,16 @@ import { auth } from "@/lib/auth";
 import { Plus, Search, UserCog, Mail, Shield, Loader2, Trash2, Edit2, X, Check } from "lucide-react";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
-import { createRecruiterFn, updateRecruiterFn, deleteRecruiterFn } from "@/lib/admin-fns";
+// Chama a API route /api/admin (mais confiável que createServerFn nesta versão)
+async function adminAPI(action: string, payload: object) {
+  const res = await fetch("/api/admin", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ action, ...payload }),
+  });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json() as Promise<{ success: boolean; error?: string; [k: string]: any }>;
+}
 
 export const Route = createFileRoute("/dashboard/recruiters")({
   beforeLoad: async () => {
@@ -58,14 +67,12 @@ function RecruitersPage() {
     e.preventDefault();
     setCreating(true);
     try {
-      const result = await createRecruiterFn({
-        email: form.email,
-        password: form.password,
-        full_name: form.full_name,
-        role: form.role,
+      const result = await adminAPI("create_recruiter", {
+        email: form.email, password: form.password,
+        full_name: form.full_name, role: form.role,
       });
       if (!result.success) {
-        toast.error((result as any).error || "Erro ao criar usuário");
+        toast.error(result.error || "Erro ao criar usuário");
       } else {
         toast.success("Recrutador criado com sucesso!");
         setShowCreate(false);
@@ -84,13 +91,11 @@ function RecruitersPage() {
     if (!editUser) return;
     setSaving(true);
     try {
-      const result = await updateRecruiterFn({
-        user_id: editUser.id,
-        full_name: editForm.full_name,
-        role: editForm.role,
+      const result = await adminAPI("update_recruiter", {
+        user_id: editUser.id, full_name: editForm.full_name, role: editForm.role,
       });
       if (!result.success) {
-        toast.error((result as any).error || "Erro ao atualizar usuário");
+        toast.error(result.error || "Erro ao atualizar usuário");
       } else {
         toast.success("Usuário atualizado com sucesso!");
         setEditUser(null);
@@ -107,9 +112,9 @@ function RecruitersPage() {
     if (!confirm("Tem certeza que deseja excluir este usuário? Esta ação não pode ser desfeita.")) return;
     setDeletingId(userId);
     try {
-      const result = await deleteRecruiterFn({ user_id: userId });
+      const result = await adminAPI("delete_recruiter", { user_id: userId });
       if (!result.success) {
-        toast.error((result as any).error || "Erro ao excluir usuário");
+        toast.error(result.error || "Erro ao excluir usuário");
       } else {
         toast.success("Usuário excluído com sucesso");
         fetchUsers();
