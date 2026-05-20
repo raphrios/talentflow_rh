@@ -1,12 +1,13 @@
-import { createFileRoute, Link, notFound } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { DashboardShell } from "@/components/DashboardShell";
 import { useCandidate } from "@/hooks/use-talent-flow";
 import { Bar, BarChart, Cell, PolarAngleAxis, PolarGrid, PolarRadiusAxis, Radar, RadarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { Calendar, FileText, Download, ArrowLeft, Mail, Phone, CheckCircle2, AlertCircle, Send, Check, X, Clock, Loader2 } from "lucide-react";
+import { Calendar, FileText, Download, ArrowLeft, Mail, Phone, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useState } from "react";
 import { jsPDF } from "jspdf";
 import "jspdf-autotable";
+import { supabase } from "@/integrations/supabase/client";
 import { NewMeetingModal } from "./dashboard.meetings";
 
 export const Route = createFileRoute("/dashboard/candidates/$id")({
@@ -16,6 +17,11 @@ export const Route = createFileRoute("/dashboard/candidates/$id")({
 function CandidateDetail() {
   const { id } = Route.useParams();
   const { data: c, isLoading } = useCandidate(id);
+
+  // ── Hooks SEMPRE antes de qualquer return condicional ──────────────────────
+  const [isExporting, setIsExporting] = useState(false);
+  const [isRequestingDocs, setIsRequestingDocs] = useState(false);
+  const [isMeetingModalOpen, setIsMeetingModalOpen] = useState(false);
 
   if (isLoading) {
     return (
@@ -37,6 +43,7 @@ function CandidateDetail() {
       </DashboardShell>
     );
   }
+
   const discData = [
     { name: "D", value: c.disc.D, fill: "#ef4444", label: "Dominância" },
     { name: "I", value: c.disc.I, fill: "#facc15", label: "Influência" },
@@ -44,16 +51,12 @@ function CandidateDetail() {
     { name: "C", value: c.disc.C, fill: "#3b82f6", label: "Conformidade" },
   ];
   const bf = [
-    { trait: "Abertura", value: c.bigFive.openness, desc: "Curiosidade, criatividade." },
-    { trait: "Conscienciosidade", value: c.bigFive.conscientiousness, desc: "Organização e disciplina." },
-    { trait: "Extroversão", value: c.bigFive.extraversion, desc: "Sociabilidade e energia." },
-    { trait: "Amabilidade", value: c.bigFive.agreeableness, desc: "Cooperação e empatia." },
-    { trait: "Neuroticismo", value: c.bigFive.neuroticism, desc: "Estabilidade emocional inversa." },
+    { trait: "Abertura",          value: c.bigFive.openness,          desc: "Curiosidade, criatividade." },
+    { trait: "Conscienciosidade", value: c.bigFive.conscientiousness,  desc: "Organização e disciplina." },
+    { trait: "Extroversão",       value: c.bigFive.extraversion,       desc: "Sociabilidade e energia." },
+    { trait: "Amabilidade",       value: c.bigFive.agreeableness,      desc: "Cooperação e empatia." },
+    { trait: "Neuroticismo",      value: c.bigFive.neuroticism,        desc: "Estabilidade emocional inversa." },
   ];
-
-  const [isExporting, setIsExporting] = useState(false);
-  const [isRequestingDocs, setIsRequestingDocs] = useState(false);
-  const [isMeetingModalOpen, setIsMeetingModalOpen] = useState(false);
 
   const handleExportPDF = () => {
     setIsExporting(true);
@@ -152,17 +155,33 @@ function CandidateDetail() {
     );
   };
 
-  const handleRequestDocs = () => {
+  const handleRequestDocs = async () => {
     setIsRequestingDocs(true);
-    toast.promise(
-      new Promise((resolve) => setTimeout(resolve, 1500)),
-      {
-        loading: "Enviando solicitação...",
-        success: "Solicitação de documentos enviada para o candidato!",
-        error: "Erro ao enviar solicitação",
-        finally: () => setIsRequestingDocs(false),
-      }
-    );
+    try {
+      const docNames = ["RG / CNH", "Comprovante de Residência", "Currículo"];
+      const inserts = docNames.map((name) => ({
+        candidate_id: c.id,
+        name,
+        type: "application/pdf",
+        status: "Pendente",
+        url: null,
+      }));
+
+      const { error } = await supabase.from("documents").upsert(inserts, {
+        onConflict: "candidate_id,name",
+        ignoreDuplicates: true,
+      });
+
+      if (error) throw error;
+
+      const link = `${window.location.origin}/docs-upload/${c.token}`;
+      await navigator.clipboard.writeText(link).catch(() => {});
+      toast.success("Link de documentos copiado! Envie ao candidato.", { duration: 5000 });
+    } catch {
+      toast.error("Erro ao gerar solicitação de documentos.");
+    } finally {
+      setIsRequestingDocs(false);
+    }
   };
 
   return (

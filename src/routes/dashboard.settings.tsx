@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { DashboardShell } from "@/components/DashboardShell";
 import { toast } from "sonner";
 import { useProfile } from "@/hooks/use-talent-flow";
@@ -107,7 +107,7 @@ function SettingsPage() {
               <div>
                 <label className="text-xs text-muted mb-1 block">E-mail</label>
                 <div className="p-3 bg-secondary/30 rounded-lg text-sm border border-border/50">
-                  {profile?.email || "igorrafaeljunior@gmail.com"}
+                  {profile?.email || "—"}
                 </div>
               </div>
               <div>
