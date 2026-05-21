@@ -39,12 +39,22 @@ export const auth = {
       is_master: isMaster,
     };
   },
-  async signIn(email: string, password: string): Promise<boolean> {
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-    return !error;
+  async signIn(email: string, password: string): Promise<{ success: boolean; error?: string }> {
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (!error) return { success: true };
+
+    // Traduz erros comuns do Supabase para português
+    const msg = error.message.toLowerCase();
+    if (msg.includes("email not confirmed"))
+      return { success: false, error: "E-mail não confirmado. Verifique sua caixa de entrada." };
+    if (msg.includes("invalid login") || msg.includes("invalid credentials"))
+      return { success: false, error: "E-mail ou senha incorretos." };
+    if (msg.includes("too many requests") || msg.includes("rate limit"))
+      return { success: false, error: "Muitas tentativas. Aguarde alguns minutos e tente novamente." };
+    if (msg.includes("user not found"))
+      return { success: false, error: "Nenhuma conta encontrada com este e-mail." };
+
+    return { success: false, error: error.message };
   },
   async signUp(email: string, password: string, role: 'recruiter' | 'colaborador' = 'recruiter', token?: string): Promise<boolean> {
     const options: any = {
@@ -71,13 +81,26 @@ export const auth = {
       options.data.recruiter_id = tokenData.recruiter_id;
     }
 
-    const { error } = await supabase.auth.signUp({
+    const { data: signUpData, error } = await supabase.auth.signUp({
       email,
       password,
       options
     });
-    
+
     if (error) throw error;
+
+    // Pede ao servidor para confirmar o email imediatamente
+    // (evita que o usuário precise verificar o email para logar)
+    if (signUpData?.user?.id) {
+      try {
+        await fetch("/api/admin", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "confirm_email", user_id: signUpData.user.id }),
+        });
+      } catch { /* silently ignore — user can still confirm via email */ }
+    }
+
     return true;
   },
   async signOut() {

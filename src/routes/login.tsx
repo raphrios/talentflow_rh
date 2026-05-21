@@ -28,16 +28,16 @@ function Login() {
     setError(null);
     try {
       if (mode === "login") {
-        const success = await auth.signIn(email, password);
-        if (success) {
+        const result = await auth.signIn(email, password);
+        if (result.success) {
           nav({ to: "/dashboard" });
         } else {
-          setError("E-mail ou senha incorretos.");
+          setError(result.error ?? "E-mail ou senha incorretos.");
         }
       } else {
         const success = await auth.signUp(email, password, role, token);
         if (success) {
-          setError("Cadastro realizado! Verifique seu e-mail para confirmar.");
+          setError("Conta criada com sucesso! Faça login agora.");
           setMode("login");
         } else {
           setError("Erro ao criar conta. Tente novamente.");

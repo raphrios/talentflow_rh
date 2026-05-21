@@ -59,21 +59,42 @@ async function handleAdminAPI(request: Request): Promise<Response> {
     /* CREATE */
     if (action === "create_recruiter") {
       const { email, password, full_name, role } = data;
+
+      // Valida senha mínima (Supabase exige >= 6 caracteres por padrão)
+      if (!password || password.length < 6)
+        return json({ success: false, error: "A senha deve ter pelo menos 6 caracteres." });
+
       const { data: created, error: authErr } = await admin.auth.admin.createUser({
-        email, password, email_confirm: true, user_metadata: { full_name },
+        email: email.trim().toLowerCase(),
+        password,
+        email_confirm: true,       // marca email como confirmado
+        user_metadata: { full_name },
       });
       if (authErr || !created?.user) {
         const msg = authErr?.message ?? "Erro ao criar usuário";
         const isDup = msg.toLowerCase().includes("already") || msg.toLowerCase().includes("duplicate");
         return json({ success: false, error: isDup ? "Este e-mail já está cadastrado." : msg });
       }
+
+      // Força confirmação de email via updateUser como dupla garantia
+      await admin.auth.admin.updateUserById(created.user.id, {
+        email_confirm: true,
+      });
+
       const { error: pErr } = await admin.from("profiles")
-        .upsert({ id: created.user.id, full_name, role, email });
+        .upsert({ id: created.user.id, full_name, role, email: email.trim().toLowerCase() });
       if (pErr) {
         await admin.auth.admin.deleteUser(created.user.id);
         return json({ success: false, error: pErr.message });
       }
       return json({ success: true, user_id: created.user.id });
+    }
+
+    /* CONFIRM EMAIL */
+    if (action === "confirm_email") {
+      const { user_id } = data;
+      await admin.auth.admin.updateUserById(user_id, { email_confirm: true });
+      return json({ success: true });
     }
 
     /* UPDATE */
