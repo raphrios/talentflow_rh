@@ -97,6 +97,39 @@ async function handleAdminAPI(request: Request): Promise<Response> {
       return json({ success: true });
     }
 
+    /* BLOCK / UNBLOCK */
+    if (action === "block_user" || action === "unblock_user") {
+      const { user_id } = data;
+      const blocked = action === "block_user";
+      const { error } = await admin.auth.admin.updateUserById(user_id, {
+        app_metadata: { blocked },
+      });
+      if (error) return json({ success: false, error: error.message });
+      return json({ success: true, blocked });
+    }
+
+    /* LIST USERS WITH BLOCKED STATUS */
+    if (action === "list_users") {
+      const { data: profiles, error: pErr } = await admin
+        .from("profiles")
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (pErr) return json({ success: false, error: pErr.message });
+
+      // busca app_metadata de cada user via admin API
+      const usersWithStatus = await Promise.all(
+        (profiles ?? []).map(async (p: any) => {
+          try {
+            const { data: u } = await admin.auth.admin.getUserById(p.id);
+            return { ...p, blocked: u?.user?.app_metadata?.blocked === true };
+          } catch {
+            return { ...p, blocked: false };
+          }
+        })
+      );
+      return json({ success: true, users: usersWithStatus });
+    }
+
     /* UPDATE */
     if (action === "update_recruiter") {
       const { user_id, full_name, role } = data;

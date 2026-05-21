@@ -3,7 +3,7 @@ import { DashboardShell } from "@/components/DashboardShell";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { auth } from "@/lib/auth";
-import { Plus, Search, UserCog, Mail, Shield, Loader2, Trash2, Edit2, X, Check } from "lucide-react";
+import { Plus, Search, UserCog, Mail, Shield, Loader2, Trash2, Edit2, X, Check, Ban, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 // Chama a API route /api/admin (mais confiável que createServerFn nesta versão)
@@ -42,17 +42,19 @@ function RecruitersPage() {
   const [editForm, setEditForm] = useState({ full_name: "", role: "recruiter" as "admin" | "recruiter" });
   const [saving, setSaving] = useState(false);
 
-  // Delete
+  // Delete / Block
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [togglingId, setTogglingId] = useState<string | null>(null);
 
   const fetchUsers = async () => {
     setLoading(true);
-    const { data, error } = await supabase
-      .from("profiles")
-      .select("*")
-      .order("created_at", { ascending: false });
-    if (error) toast.error("Erro ao carregar usuários");
-    else setUsers(data || []);
+    try {
+      const result = await adminAPI("list_users", {});
+      if (result.success) setUsers(result.users || []);
+      else toast.error("Erro ao carregar usuários");
+    } catch {
+      toast.error("Erro ao carregar usuários");
+    }
     setLoading(false);
   };
 
@@ -126,6 +128,26 @@ function RecruitersPage() {
     }
   };
 
+  const handleToggleBlock = async (userId: string, currentlyBlocked: boolean) => {
+    const action = currentlyBlocked ? "unblock_user" : "block_user";
+    const label = currentlyBlocked ? "desbloquear" : "bloquear";
+    if (!confirm(`Tem certeza que deseja ${label} este usuário?`)) return;
+    setTogglingId(userId);
+    try {
+      const result = await adminAPI(action, { user_id: userId });
+      if (!result.success) {
+        toast.error(result.error || `Erro ao ${label} usuário`);
+      } else {
+        toast.success(currentlyBlocked ? "Acesso restaurado com sucesso." : "Usuário bloqueado. Ele será desconectado no próximo acesso.");
+        fetchUsers();
+      }
+    } catch (err: any) {
+      toast.error(err?.message || `Erro ao ${label} usuário`);
+    } finally {
+      setTogglingId(null);
+    }
+  };
+
   const filteredUsers = users.filter(u =>
     u.full_name?.toLowerCase().includes(search.toLowerCase()) ||
     u.email?.toLowerCase().includes(search.toLowerCase()) ||
@@ -182,11 +204,13 @@ function RecruitersPage() {
                     </td>
                   </tr>
                 ) : filteredUsers.map((user) => (
-                  <tr key={user.id} className="hover:bg-surface/60 transition-colors group">
+                  <tr key={user.id} className={`transition-colors group ${user.blocked ? "bg-danger/5 hover:bg-danger/8" : "hover:bg-surface/60"}`}>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-surface border border-white/5 flex items-center justify-center font-bold text-xs text-primary flex-shrink-0">
-                          {user.full_name?.substring(0, 2).toUpperCase() || "US"}
+                        <div className={`w-10 h-10 rounded-full border flex items-center justify-center font-bold text-xs flex-shrink-0 ${
+                          user.blocked ? "bg-danger/10 border-danger/20 text-danger" : "bg-surface border-white/5 text-primary"
+                        }`}>
+                          {user.blocked ? <Ban size={16} /> : (user.full_name?.substring(0, 2).toUpperCase() || "US")}
                         </div>
                         <div>
                           <div className="text-[15px] font-bold">{user.full_name || "Sem Nome"}</div>
@@ -203,10 +227,16 @@ function RecruitersPage() {
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="flex items-center gap-2">
-                        <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-                        <span className="text-[14px] font-medium">Ativo</span>
-                      </div>
+                      {user.blocked ? (
+                        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[12px] font-bold bg-danger/10 text-danger border border-danger/20">
+                          <Ban size={12} /> Bloqueado
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+                          <span className="text-[14px] font-medium">Ativo</span>
+                        </div>
+                      )}
                     </td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex justify-end gap-2">
@@ -216,6 +246,21 @@ function RecruitersPage() {
                           title="Editar Usuário"
                         >
                           <Edit2 size={18} />
+                        </button>
+                        <button
+                          onClick={() => handleToggleBlock(user.id, user.blocked)}
+                          disabled={togglingId === user.id}
+                          className={`p-2 rounded-lg transition-colors disabled:opacity-40 ${
+                            user.blocked
+                              ? "hover:bg-primary/10 text-danger hover:text-primary"
+                              : "hover:bg-danger/10 text-muted hover:text-danger"
+                          }`}
+                          title={user.blocked ? "Desbloquear Acesso" : "Bloquear por Inadimplência"}
+                        >
+                          {togglingId === user.id
+                            ? <Loader2 size={18} className="animate-spin" />
+                            : user.blocked ? <ShieldCheck size={18} /> : <Ban size={18} />
+                          }
                         </button>
                         <button
                           onClick={() => handleDelete(user.id)}

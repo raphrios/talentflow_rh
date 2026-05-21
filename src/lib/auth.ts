@@ -8,6 +8,7 @@ export interface UserProfile {
   role: 'admin' | 'recruiter' | 'colaborador';
   full_name: string | null;
   is_master: boolean;
+  is_blocked: boolean;
 }
 
 export const auth = {
@@ -30,6 +31,13 @@ export const auth = {
       .single();
 
     const isMaster = session.user.email?.toLowerCase() === MASTER_EMAIL.toLowerCase();
+    const isBlocked = session.user.app_metadata?.blocked === true;
+
+    // Bloqueia acesso ao dashboard se conta estiver suspensa (exceto master)
+    if (isBlocked && !isMaster) {
+      await supabase.auth.signOut();
+      return null;
+    }
 
     return {
       id: session.user.id,
@@ -37,11 +45,19 @@ export const auth = {
       role: isMaster ? 'admin' : ((profile?.role === 'admin' || profile?.role === 'recruiter') ? profile.role : 'recruiter'),
       full_name: profile?.full_name || null,
       is_master: isMaster,
+      is_blocked: isBlocked,
     };
   },
   async signIn(email: string, password: string): Promise<{ success: boolean; error?: string }> {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (!error) return { success: true };
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    if (!error) {
+      // Verifica bloqueio APÓS login bem-sucedido
+      if (data?.user?.app_metadata?.blocked === true) {
+        await supabase.auth.signOut();
+        return { success: false, error: "⚠️ Acesso bloqueado por inadimplência. Entre em contato com o administrador." };
+      }
+      return { success: true };
+    }
 
     // Traduz erros comuns do Supabase para português
     const msg = error.message.toLowerCase();
